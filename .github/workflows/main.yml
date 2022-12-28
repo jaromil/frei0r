@@ -159,7 +159,7 @@ jobs:
 
   draft-binary-release:
     name: 📦 Pack release
-    needs: [msvc-build]
+    needs: [semantic-release, msvc-build]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
     runs-on: ubuntu-latest
     steps:
@@ -187,7 +187,7 @@ jobs:
           cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
           zip -r -9 $dst.zip $dst
-          sha256sum *.tar.gz > SHA256SUMS.txt
+          sha256sum *.zip > SHA256SUMS.txt
       - name: show directory structure
         run: tree -dL 3
       - name: release all archives
@@ -196,6 +196,7 @@ jobs:
           files: |
             frei0r-bin/*.zip
             frei0r-bin/SHA256SUMS.txt
+            frei0r-bin/release-plugin-analysis/*.json
           tag_name: ${{ needs.semantic-release.outputs.version }}
           draft: true
           prerelease: false
