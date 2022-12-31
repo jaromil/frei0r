@@ -95,7 +95,7 @@ jobs:
           brew update --preinstall
       - name: Install Homebrew dependencies
         run: |
-          env HOMEBREW_NO_AUTO_UPDATE=1 brew install cmake ninja
+          env HOMEBREW_NO_AUTO_UPDATE=1 brew install cmake ninja opencv cairo
       - name: Build using ninja
         run: |
           mkdir build && cd build
@@ -124,6 +124,9 @@ jobs:
 
   draft-binary-release:
     name: 📦 Pack release
+    strategy:
+      matrix:
+        target: [osx, win64]
     needs: [semantic-release, win-build, osx-build]
     # if: ${{ needs.semantic-release.outputs.release == 'True' }}
     runs-on: ubuntu-latest
@@ -136,25 +139,34 @@ jobs:
             frei0r-bin
       - name: create compressed archives
         run: |
-          cd frei0r-bin
-          dst=frei0r-filters_${{ needs.semantic-release.outputs.version }}_win64
-          mkdir $dst && find release-win64-filters -type f -name '*.dll' -exec cp {} $dst \;
-          cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
-          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
+          dst=frei0r-${{ needs.semantic-release.outputs.version }}_win64
+          mkdir -p $dst/filter $dst/generator $dst/mixer2 $dst/mixer3
+          find frei0r-bin/release-win64-filter    -type f -name '*.dll' -exec cp {} $dst/filter    \;
+          find frei0r-bin/release-win64-generator -type f -name '*.dll' -exec cp {} $dst/generator \;
+          find frei0r-bin/release-win64-mixer2    -type f -name '*.dll' -exec cp {} $dst/mixer2    \;
+          find frei0r-bin/release-win64-mixer3    -type f -name '*.dll' -exec cp {} $dst/mixer3    \;
+          cp README.md $dst/README.txt
+          cp COPYING   $dst/LICENSE.txt
+          cp ChangeLog $dst/ChangeLog.txt
+          cp AUTHORS   $dst/AUTHORS.txt
+          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
-          dst=frei0r-mixers_${{ needs.semantic-release.outputs.version }}_win64
-          mkdir $dst && find release-win64-mixers -type f -name '*.dll' -exec cp {} $dst \;
-          cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
-          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
+
+          dst=frei0r-${{ needs.semantic-release.outputs.version }}_osx
+          mkdir -p $dst/filter $dst/generator $dst/mixer2 $dst/mixer3
+          find frei0r-bin/release-osx-filter    -type f -name '*.dll' -exec cp {} $dst/filter    \;
+          find frei0r-bin/release-osx-generator -type f -name '*.dll' -exec cp {} $dst/generator \;
+          find frei0r-bin/release-osx-mixer2    -type f -name '*.dll' -exec cp {} $dst/mixer2    \;
+          find frei0r-bin/release-osx-mixer3    -type f -name '*.dll' -exec cp {} $dst/mixer3    \;
+          cp README.md $dst/README.txt
+          cp COPYING   $dst/LICENSE.txt
+          cp ChangeLog $dst/ChangeLog.txt
+          cp AUTHORS   $dst/AUTHORS.txt
+          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
-          dst=frei0r-generators_${{ needs.semantic-release.outputs.version }}_win64
-          mkdir $dst && find release-win64-generators -type f -name '*.dll' -exec cp {} $dst \;
-          cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
-          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
-          zip -r -9 $dst.zip $dst
+
           sha256sum *.zip > SHA256SUMS.txt
-      - name: show directory structure
-        run: tree -dL 3
+
       - name: release all archives
         uses: softprops/action-gh-release@v1
         with:
@@ -167,5 +179,3 @@ jobs:
           prerelease: false
           fail_on_unmatched_files: true
           generate_release_notes: true
-
-
