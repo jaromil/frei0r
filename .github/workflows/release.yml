@@ -147,19 +147,21 @@ jobs:
           cp COPYING   $dst/LICENSE.txt
           cp ChangeLog $dst/ChangeLog.txt
           cp AUTHORS   $dst/AUTHORS.txt
+          cp include/frei0r.h include/frei0r.hpp $dst/
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
 
           dst=frei0r-${{ needs.semantic-release.outputs.version }}_osx
           mkdir -p $dst/filter $dst/generator $dst/mixer2 $dst/mixer3
-          find frei0r-bin/release-osx-filter    -type f -name '*.dll' -exec cp {} $dst/filter    \;
-          find frei0r-bin/release-osx-generator -type f -name '*.dll' -exec cp {} $dst/generator \;
-          find frei0r-bin/release-osx-mixer2    -type f -name '*.dll' -exec cp {} $dst/mixer2    \;
-          find frei0r-bin/release-osx-mixer3    -type f -name '*.dll' -exec cp {} $dst/mixer3    \;
+          find frei0r-bin/release-osx-filter    -type f -name '*.so' -exec cp {} $dst/filter    \;
+          find frei0r-bin/release-osx-generator -type f -name '*.so' -exec cp {} $dst/generator \;
+          find frei0r-bin/release-osx-mixer2    -type f -name '*.so' -exec cp {} $dst/mixer2    \;
+          find frei0r-bin/release-osx-mixer3    -type f -name '*.so' -exec cp {} $dst/mixer3    \;
           cp README.md $dst/README.txt
           cp COPYING   $dst/LICENSE.txt
           cp ChangeLog $dst/ChangeLog.txt
           cp AUTHORS   $dst/AUTHORS.txt
+          cp include/frei0r.h include/frei0r.hpp $dst/
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
 
