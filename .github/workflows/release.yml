@@ -169,8 +169,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            frei0r-bin/*.zip
-            frei0r-bin/SHA256SUMS.txt
+            *.zip
+            SHA256SUMS.txt
             frei0r-bin/release-plugin-analysis/*.json
           tag_name: ${{ needs.semantic-release.outputs.version }}
           draft: true
