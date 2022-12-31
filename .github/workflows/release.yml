@@ -1,9 +1,9 @@
-name: Release
+name: 020-Release
 
 on:
   workflow_run:
     workflows:
-      - Test
+      - 010-Test
     types: [completed]
     branches:
       - master
@@ -124,7 +124,7 @@ jobs:
 
   draft-binary-release:
     name: 📦 Pack release
-    needs: [semantic-release, msvc-build]
+    needs: [semantic-release, win-build, osx-build]
     # if: ${{ needs.semantic-release.outputs.release == 'True' }}
     runs-on: ubuntu-latest
     steps:
