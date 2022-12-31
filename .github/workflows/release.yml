@@ -49,7 +49,7 @@ jobs:
     name: 💻 win64 build
     runs-on: windows-latest
     needs: [semantic-release]
-    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    # if: ${{ needs.semantic-release.outputs.release == 'True' }}
     steps:
       - uses: actions/checkout@v3
       - uses: ilammy/msvc-dev-cmd@v1
@@ -87,7 +87,7 @@ jobs:
     name: 💻 osx build
     runs-on: macos-latest
     needs: [semantic-release]
-    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    # if: ${{ needs.semantic-release.outputs.release == 'True' }}
     steps:
       - uses: actions/checkout@v3
       - name: Update Homebrew
