@@ -6,6 +6,7 @@ on:
       - Test
     types: [completed]
     branches:
+      - master
       - release/**
 
 concurrency:
@@ -13,79 +14,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
-  # reuse:
-  #   name: 🚨 REUSE Compliance
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: fsfe/reuse-action@v1
-
-  c-lint:
-    name: 🚨 C lint
-    runs-on: ubuntu-latest
-    if: "!contains(github.event.pull_request.labels.*.name, 'skip-lint')"
-    steps:
-      - uses: actions/checkout@v3
-      - uses: reviewdog/action-cpplint@master
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-check
-          targets: --recursive src
-          level: warning
-          flags: --linelength=120 # Optional
-          filter: "-readability/braces\
-            ,-readability/casting\
-            ,-readability/todo\
-            ,-whitespace/comma\
-            ,-whitespace/braces\
-            ,-whitespace/comments\
-            ,-whitespace/indent\
-            ,-whitespace/newline\
-            ,-whitespace/operators\
-            ,-whitespace/parens\
-            ,-whitespace/tab\
-            ,-whitespace/end_of_line\
-            ,-whitespace/line_length\
-            ,-whitespace/blank_line\
-            ,-whitespace/semicolon\
-            ,-build/include_subdir\
-            ,-build/include_order\
-            "
-
-  test-suite:
-    name: 🔬 test
-    needs: [c-lint]
-    if: "!contains(github.event.pull_request.labels.*.name, 'skip-test')"
-    strategy:
-      matrix:
-        compiler: [clang-14]
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: install dependencies
-        run: |
-          sudo apt-get update -qy
-          sudo apt-get install --no-install-recommends -y ${{ matrix.compiler }} cmake ninja-build libfreetype-dev libopencv-dev libcairo2-dev libgavl-dev
-      - name: ${{ matrix.compiler }} initialize cmake build
-        run: |
-          mkdir -p build && cd build
-          cmake -G "Ninja" ../
-      - name: ${{ matrix.compiler }} run ninja build
-        run: |
-          cd build && ninja
-      - name: ${{ matrix.compiler }} analyze plugins
-        run: |
-          cd test && make
-      - name: ${{ matrix.compiler }} upload plugin analysis
-        uses: actions/upload-artifact@v3
-        with:
-          name: release-plugin-analysis
-          path: test/*.json
-        
   semantic-release:
     name: 🤖 Semantic release
     runs-on: ubuntu-latest
@@ -118,10 +46,10 @@ jobs:
             awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
           fi
 
-  msvc-build:
-    name: 💻 msvc build win64
+  win-build:
+    name: 💻 win64 build
     runs-on: windows-latest
-    needs: [semantic-release, test-suite, c-lint]
+    needs: [semantic-release]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
     steps:
       - uses: actions/checkout@v3
@@ -135,26 +63,70 @@ jobs:
           mkdir build && cd build
           cmake -G "NMake Makefiles" ../
           nmake
-      - name: Upload win64 filters
+      - name: Upload win64 filter
         uses: actions/upload-artifact@v3
         with:
-          name: release-win64-filters
+          name: release-win64-filter
           path: build/src/filter/**/*.dll
-      - name: Upload win64 mixers
+      - name: Upload win64 mixer2
         uses: actions/upload-artifact@v3
         with:
-          name: release-win64-mixers
-          path: build/src/mixer*/**/*.dll
-      - name: Upload win64 generators
+          name: release-win64-mixer2
+          path: build/src/mixer2/**/*.dll
+      - name: Upload win64 mixer3
         uses: actions/upload-artifact@v3
         with:
-          name: release-win64-generators
+          name: release-win64-mixer3
+          path: build/src/mixer3/**/*.dll
+      - name: Upload win64 generator
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-win64-generator
           path: build/src/generator/**/*.dll
+
+  osx-build:
+    name: 💻 osx build
+    runs-on: macos-latest
+    needs: [semantic-release]
+    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Update Homebrew
+        run: |
+          brew update --preinstall
+      - name: Install Homebrew dependencies
+        run: |
+          env HOMEBREW_NO_AUTO_UPDATE=1 brew install cmake ninja
+      - name: Build using ninja
+        run: |
+          mkdir build && cd build
+          cmake -G "Ninja" ../
+          ninja
+      - name: Upload osx filter
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-osx-filter
+          path: build/src/filter/**/*.so
+      - name: Upload osx mixer2
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-osx-mixer2
+          path: build/src/mixer2/**/*.so
+      - name: Upload osx mixer3
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-osx-mixer3
+          path: build/src/mixer3/**/*.so
+      - name: Upload osx generator
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-osx-generator
+          path: build/src/generator/**/*.so
 
   draft-binary-release:
     name: 📦 Pack release
     needs: [semantic-release, msvc-build]
-    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    # if: ${{ needs.semantic-release.outputs.release == 'True' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
