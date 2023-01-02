@@ -223,6 +223,7 @@ jobs:
         with:
           files: |
             *.zip
+            *.tar.gz
             SHA256SUMS.txt
           tag_name: ${{ needs.semantic-release.outputs.version }}
           draft: true
