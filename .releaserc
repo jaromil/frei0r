@@ -1,5 +1,5 @@
 {
-  "repositoryUrl": "git@github.com:dyne/frei0r.git",
+  "repositoryUrl": "git@github.com:dyne/jaromil.git",
   "dryRun": false,
   "plugins": [
     "@semantic-release/changelog",
