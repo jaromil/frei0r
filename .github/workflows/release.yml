@@ -45,8 +45,45 @@ jobs:
             awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
           fi
 
+  linux-build:
+    name: 🐧 linux build
+    runs-on: ubuntu-latest
+    needs: [semantic-release]
+    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: apt install deps
+        run: |
+          apt-get update -y -q
+          apt-get install -y -q --no-install-recommends cmake ninja-build clang++ libopencv-dev libgavl-dev libfreetype-dev libcairo-dev
+      - name: Build using cmake+ninja
+        run: |
+          mkdir build && cd build
+          cmake -G "Ninja" ../
+          ninja
+      - name: Upload linux filter
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-linux-filter
+          path: build/src/filter/**/*.so
+      - name: Upload linux mixer2
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-linux-mixer2
+          path: build/src/mixer2/**/*.so
+      - name: Upload linux mixer3
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-linux-mixer3
+          path: build/src/mixer3/**/*.so
+      - name: Upload linux generator
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-linux-generator
+          path: build/src/generator/**/*.so
+
   win-build:
-    name: 💻 win64 build
+    name: 🪟 win64 build
     runs-on: windows-latest
     needs: [semantic-release]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
@@ -84,7 +121,7 @@ jobs:
           path: build/src/generator/**/*.dll
 
   osx-build:
-    name: 💻 osx build
+    name: 🍏 osx build
     runs-on: macos-latest
     needs: [semantic-release]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
